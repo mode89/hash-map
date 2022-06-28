@@ -6,7 +6,11 @@
 
 (defrecord MapEntry [key value])
 
-(defn arr-idx [s h]
+(def EMPTY-ARRAY-NODE (-> (repeat 32 nil)
+                          vec
+                          ArrayNode.))
+
+(defn array-index [s h]
   "Index of a key inside an ArrayNode"
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
 
@@ -17,6 +21,13 @@
     node
     nil))
 
+(defmethod node-get-entry ArrayNode [node shift khash k]
+  (let [child-idx (array-index shift khash)
+        child (nth (:children node) child-idx)]
+    (if (nil? child)
+      nil
+      (node-get-entry child (+ shift 5) khash k))))
+
 (defmulti node-assoc (fn [node shift khash k v] (class node)))
 
 (defmethod node-assoc MapEntry [node shift khash k v]
@@ -24,7 +35,20 @@
     (if (= (:value node) v)
       node
       (MapEntry. k v))
-    (throw (Exception. "Not implemented"))))
+    (if (<= shift 30)
+      (-> EMPTY-ARRAY-NODE
+          (node-assoc shift (.hashCode (:key node)) (:key node) (:value node))
+          (node-assoc shift khash k v))
+      (throw (Exception. "Not implemented")))))
+
+(defmethod node-assoc ArrayNode [node shift khash k v]
+  (let [child-idx (array-index shift khash)
+        child (nth (:children node) child-idx)]
+    (if (nil? child)
+      (-> (:children node)
+          (assoc child-idx (MapEntry. k v))
+          ArrayNode.)
+      (throw (Exception. "Not implemented")))))
 
 (defn new-map []
   "Create a empty Map"

@@ -34,3 +34,11 @@
         m2 (massoc m1 (mkey 1) 2)
         m3 (massoc m2 (mkey 1) 3)]
     (is (= 3 (mget m3 (mkey 1))))))
+
+(deftest massoc-another
+  (let [m1 (new-map)
+        m2 (massoc m1 (mkey 1) 2)
+        m3 (massoc m2 (mkey 2) 3)]
+    (is (not (identical? m2 m3)))
+    (is (= 2 (mget m3 (mkey 1))))
+    (is (= 3 (mget m3 (mkey 2))))))
