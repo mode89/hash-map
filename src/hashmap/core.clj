@@ -10,6 +10,13 @@
   "Index of a key inside an ArrayNode"
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
 
+(defmulti node-get-entry (fn [node shift khash k] (class node)))
+
+(defmethod node-get-entry MapEntry [node shift khash k]
+  (if (= (:key node) k)
+    node
+    nil))
+
 (defn new-map []
   "Create a empty Map"
   (Map. nil))
@@ -18,17 +25,11 @@
   "Get value associated with key `k` inside map `m`"
   (if (nil? (:root m))
     nil
-    (let [khash (.hashCode k)
-          idx (arr-idx 0 khash)]
-      (-> m :root :children (nth idx) :value))))
+    (-> (:root m)
+        (node-get-entry 0 (.hashCode k) k)
+        :value)))
 
 (defn massoc [m k v]
   "Associate key `k` with value `v` inside map `m`"
-  (let [khash (.hashCode k)]
-    (if (nil? (:root m))
-      (-> (repeat 32 nil)
-          vec
-          (assoc (arr-idx 0 khash)
-                 (MapEntry. k v))
-          ArrayNode.
-          Map.))))
+  (if (nil? (:root m))
+    (Map. (MapEntry. k v))))
