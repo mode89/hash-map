@@ -1,5 +1,4 @@
-(ns hashmap.core
-  (:refer-clojure :exclude [assoc get]))
+(ns hashmap.core)
 
 (defrecord Map [root])
 
@@ -15,7 +14,7 @@
   "Create a empty Map"
   (Map. nil))
 
-(defn get [m k]
+(defn mget [m k]
   "Get value associated with key `k` inside map `m`"
   (if (nil? (:root m))
     nil
@@ -23,7 +22,7 @@
           idx (arr-idx 0 khash)]
       (-> m :root :children (aget idx) :value))))
 
-(defn assoc [m k v]
+(defn massoc [m k v]
   "Associate key `k` with value `v` inside map `m`"
   (let [khash (.hashCode k)
         idx (arr-idx 0 khash)]
