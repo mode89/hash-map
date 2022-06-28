@@ -20,13 +20,15 @@
     nil
     (let [khash (.hashCode k)
           idx (arr-idx 0 khash)]
-      (-> m :root :children (aget idx) :value))))
+      (-> m :root :children (nth idx) :value))))
 
 (defn massoc [m k v]
   "Associate key `k` with value `v` inside map `m`"
-  (let [khash (.hashCode k)
-        idx (arr-idx 0 khash)]
+  (let [khash (.hashCode k)]
     (if (nil? (:root m))
-      (let [arr (object-array 32)]
-        (aset arr idx (MapEntry. k v))
-        (-> arr ArrayNode. Map.)))))
+      (-> (repeat 32 nil)
+          vec
+          (assoc (arr-idx 0 khash)
+                 (MapEntry. k v))
+          ArrayNode.
+          Map.))))
