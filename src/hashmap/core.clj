@@ -17,6 +17,15 @@
     node
     nil))
 
+(defmulti node-assoc (fn [node shift khash k v] (class node)))
+
+(defmethod node-assoc MapEntry [node shift khash k v]
+  (if (= (:key node) k)
+    (if (= (:value node) v)
+      node
+      (MapEntry. k v))
+    (throw (Exception. "Not implemented"))))
+
 (defn new-map []
   "Create a empty Map"
   (Map. nil))
@@ -32,4 +41,8 @@
 (defn massoc [m k v]
   "Associate key `k` with value `v` inside map `m`"
   (if (nil? (:root m))
-    (Map. (MapEntry. k v))))
+    (Map. (MapEntry. k v))
+    (let [new-root (node-assoc (:root m) 0 (.hashCode k) k v)]
+      (if (identical? new-root (:root m))
+        m
+        (Map. new-root)))))

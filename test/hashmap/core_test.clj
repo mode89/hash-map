@@ -22,3 +22,15 @@
   (let [m1 (new-map)
         m2 (massoc m1 1 2)]
     (is (= 2 (mget m2 1)))))
+
+(deftest massoc-same-key-value
+  (let [m1 (new-map)
+        m2 (massoc m1 (mkey 1) 2)
+        m3 (massoc m2 (mkey 1) 2)]
+    (is (identical? m2 m3))))
+
+(deftest massoc-same-key
+  (let [m1 (new-map)
+        m2 (massoc m1 (mkey 1) 2)
+        m3 (massoc m2 (mkey 1) 3)]
+    (is (= 3 (mget m3 (mkey 1))))))
