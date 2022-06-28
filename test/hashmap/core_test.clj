@@ -1,14 +1,14 @@
 (ns hashmap.core_test
   (:require [clojure.test :refer :all]
-            [hashmap.core :as hm])
+            [hashmap.core :refer :all])
   (:import [hashmap.core Map]))
 
-(deftest new-map
-  (let [m (hm/new-map)]
-    (is (instance? Map (hm/new-map)))
-    (is (nil? (hm/mget m 1)))))
+(deftest make-new-map
+  (let [m (new-map)]
+    (is (instance? Map (new-map)))
+    (is (nil? (mget m 1)))))
 
 (deftest new-map-massoc
-  (let [m1 (hm/new-map)
-        m2 (hm/massoc m1 1 2)]
-    (is (= 2 (hm/mget m2 1)))))
+  (let [m1 (new-map)
+        m2 (massoc m1 1 2)]
+    (is (= 2 (mget m2 1)))))
