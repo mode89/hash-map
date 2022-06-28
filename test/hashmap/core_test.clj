@@ -3,6 +3,16 @@
             [hashmap.core :refer :all])
   (:import [hashmap.core Map]))
 
+(deftype Key [value hash-code]
+  Object
+  (equals [this other]
+    (= value (.value other)))
+  (hashCode [this]
+    hash-code))
+
+(defn mkey [x]
+  (Key. x x))
+
 (deftest make-new-map
   (let [m (new-map)]
     (is (instance? Map (new-map)))
