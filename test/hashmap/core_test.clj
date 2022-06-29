@@ -89,3 +89,8 @@
     (is (= 2 (mget m (Key. 1 42))))
     (is (= 4 (mget m (Key. 3 42))))
     (is (= 6 (mget m (Key. 5 5))))))
+
+(deftest dissoc-empty
+  (let [m1 (new-map)
+        m2 (mdissoc m1 42)]
+    (is (identical? m1 m2))))

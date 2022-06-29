@@ -104,3 +104,7 @@
         (if (identical? new-root (:root m))
           m
           (Map. new-root))))))
+
+(defn mdissoc [m k]
+  (if (nil? (:root m))
+    m))
