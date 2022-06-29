@@ -8,6 +8,8 @@
 
 (defrecord MapEntry [key-hash key value])
 
+(def EMPTY-MAP (Map. nil))
+
 (defn not-implemented []
   (throw (Exception. "Not implemented")))
 
@@ -86,9 +88,16 @@
     (-> (make-array-node shift node)
         (node-assoc shift entry))))
 
+(defmulti node-dissoc (fn [node shift khash k] (class node)))
+
+(defmethod node-dissoc MapEntry [node shift khash k]
+  (if (= (:key node) k)
+    nil
+    node))
+
 (defn new-map []
   "Create a empty Map"
-  (Map. nil))
+  EMPTY-MAP)
 
 (defn mget [m k]
   "Get value associated with key `k` inside map `m`"
@@ -110,4 +119,10 @@
 
 (defn mdissoc [m k]
   (if (nil? (:root m))
-    m))
+    m
+    (let [new-root (node-dissoc (:root m) 0 (.hashCode k) k)]
+      (if (identical? new-root (:root m))
+        m
+        (if (nil? new-root)
+          EMPTY-MAP
+          (not-implemented))))))

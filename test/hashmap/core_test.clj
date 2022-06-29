@@ -94,3 +94,15 @@
   (let [m1 (new-map)
         m2 (mdissoc m1 42)]
     (is (identical? m1 m2))))
+
+(deftest dissoc-map-entry-miss
+  (let [m1 (new-map)
+        m2 (massoc m1 1 42)
+        m3 (mdissoc m2 2)]
+    (is (identical? m2 m3))))
+
+(deftest dissoc-map-entry-hit
+  (let [m1 (new-map)
+        m2 (massoc m1 1 42)
+        m3 (mdissoc m2 1)]
+    (is (identical? m1 m3))))
