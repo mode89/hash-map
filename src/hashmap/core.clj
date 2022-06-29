@@ -75,7 +75,7 @@
       (if (some? child-idx)
         (let [child (nth (:children node) child-idx)]
           (if (= (:value child) v)
-            (throw (Exception. "Not implemented"))
+            node
             (CollisionNode. khash
                             (assoc (:children node)
                                    child-idx

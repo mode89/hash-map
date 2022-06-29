@@ -64,3 +64,10 @@
               (massoc (Key. 1 42) 5))]
     (is (= 5 (mget m (Key. 1 42))))
     (is (= 4 (mget m (Key. 3 42))))))
+
+(deftest keep-collision-node
+  (let [m1 (-> (new-map)
+               (massoc (Key. 1 42) 2)
+               (massoc (Key. 3 42) 4))
+        m2 (massoc m1 (Key. 1 42) 2)]
+    (is (identical? m1 m2))))
