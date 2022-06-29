@@ -56,3 +56,11 @@
               (massoc (Key. 3 42) 4))]
     (is (= 2 (mget m (Key. 1 42))))
     (is (= 4 (mget m (Key. 3 42))))))
+
+(deftest overwrite-collision-node
+  (let [m (-> (new-map)
+              (massoc (Key. 1 42) 2)
+              (massoc (Key. 3 42) 4)
+              (massoc (Key. 1 42) 5))]
+    (is (= 5 (mget m (Key. 1 42))))
+    (is (= 4 (mget m (Key. 3 42))))))

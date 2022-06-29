@@ -4,7 +4,7 @@
 
 (defrecord ArrayNode [children])
 
-(defrecord CollisionNode [children])
+(defrecord CollisionNode [key-hash children])
 
 (defrecord MapEntry [key value])
 
@@ -48,7 +48,7 @@
       node
       (MapEntry. k v))
     (if (= khash (.hashCode (:key node)))
-      (CollisionNode. [node (MapEntry. k v)])
+      (CollisionNode. khash [node (MapEntry. k v)])
       (-> (make-array-node shift node)
           (node-assoc shift khash k v)))))
 
@@ -66,6 +66,22 @@
           (-> children
               (assoc child-idx new-child)
               ArrayNode.))))))
+
+(defmethod node-assoc CollisionNode [node shift khash k v]
+  (if (= (:key-hash node) khash)
+    (let [child-idx (-> #(if (= k (:key %2)) %1)
+                        (keep-indexed (:children node))
+                        first)]
+      (if (some? child-idx)
+        (let [child (nth (:children node) child-idx)]
+          (if (= (:value child) v)
+            (throw (Exception. "Not implemented"))
+            (CollisionNode. khash
+                            (assoc (:children node)
+                                   child-idx
+                                   (MapEntry. k v)))))
+        (throw (Exception. "Not implemented"))))
+    (throw (Exception. "Not implemented"))))
 
 (defn new-map []
   "Create a empty Map"
