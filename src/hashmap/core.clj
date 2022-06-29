@@ -4,6 +4,8 @@
 
 (defrecord ArrayNode [children])
 
+(defrecord CollisionNode [children])
+
 (defrecord MapEntry [key value])
 
 (defn array-index [s h]
@@ -33,6 +35,11 @@
       nil
       (node-get-entry child (+ shift 5) khash k))))
 
+(defmethod node-get-entry CollisionNode [node shift khash k]
+  (->> (:children node)
+       (filter #(= k (:key %)))
+       first))
+
 (defmulti node-assoc (fn [node shift khash k v] (class node)))
 
 (defmethod node-assoc MapEntry [node shift khash k v]
@@ -40,10 +47,10 @@
     (if (= (:value node) v)
       node
       (MapEntry. k v))
-    (if (<= shift 30)
+    (if (= khash (.hashCode (:key node)))
+      (CollisionNode. [node (MapEntry. k v)])
       (-> (make-array-node shift node)
-          (node-assoc shift khash k v))
-      (throw (Exception. "Not implemented")))))
+          (node-assoc shift khash k v)))))
 
 (defmethod node-assoc ArrayNode [node shift khash k v]
   (let [child-idx (array-index shift khash)

@@ -49,3 +49,10 @@
         m3 (massoc m2 (mkey 33) 3)]
     (is (= 2 (mget m3 (mkey 1))))
     (is (= 3 (mget m3 (mkey 33))))))
+
+(deftest collision
+  (let [m (-> (new-map)
+              (massoc (Key. 1 42) 2)
+              (massoc (Key. 3 42) 4))]
+    (is (= 2 (mget m (Key. 1 42))))
+    (is (= 4 (mget m (Key. 3 42))))))
