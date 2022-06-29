@@ -15,10 +15,10 @@
 (defn make-entry [k v]
   (MapEntry. (.hashCode k) k v))
 
-(defn make-array-node [shift entry]
+(defn make-array-node [shift node]
   (-> (repeat 32 nil)
       vec
-      (assoc (array-index shift (:key-hash entry)) entry)
+      (assoc (array-index shift (:key-hash node)) node)
       ArrayNode.))
 
 (defmulti node-get-entry (fn [node shift khash k] (class node)))
@@ -80,7 +80,8 @@
                             (assoc (:children node) child-idx entry))))
         (CollisionNode. (:key-hash node)
                         (conj (:children node) entry))))
-    (throw (Exception. "Not implemented"))))
+    (-> (make-array-node shift node)
+        (node-assoc shift entry))))
 
 (defn new-map []
   "Create a empty Map"

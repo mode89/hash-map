@@ -80,3 +80,12 @@
     (is (= 2 (mget m (Key. 1 42))))
     (is (= 4 (mget m (Key. 3 42))))
     (is (= 6 (mget m (Key. 5 42))))))
+
+(deftest expand-collision-node
+  (let [m (-> (new-map)
+              (massoc (Key. 1 42) 2)
+              (massoc (Key. 3 42) 4)
+              (massoc (Key. 5 5) 6))]
+    (is (= 2 (mget m (Key. 1 42))))
+    (is (= 4 (mget m (Key. 3 42))))
+    (is (= 6 (mget m (Key. 5 5))))))
