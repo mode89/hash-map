@@ -8,6 +8,9 @@
 
 (defrecord MapEntry [key-hash key value])
 
+(defn not-implemented []
+  (throw (Exception. "Not implemented")))
+
 (defn array-index [s h]
   "Index of a key inside an ArrayNode"
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
