@@ -6,13 +6,18 @@
 
 (defrecord MapEntry [key value])
 
-(def EMPTY-ARRAY-NODE (-> (repeat 32 nil)
-                          vec
-                          ArrayNode.))
-
 (defn array-index [s h]
   "Index of a key inside an ArrayNode"
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
+
+(defn make-array-node [shift entry]
+  (-> (repeat 32 nil)
+      vec
+      (assoc (->> (:key entry)
+                  .hashCode
+                  (array-index shift))
+             entry)
+      ArrayNode.))
 
 (defmulti node-get-entry (fn [node shift khash k] (class node)))
 
@@ -36,8 +41,7 @@
       node
       (MapEntry. k v))
     (if (<= shift 30)
-      (-> EMPTY-ARRAY-NODE
-          (node-assoc shift (.hashCode (:key node)) (:key node) (:value node))
+      (-> (make-array-node shift node)
           (node-assoc shift khash k v))
       (throw (Exception. "Not implemented")))))
 
