@@ -42,3 +42,10 @@
     (is (not (identical? m2 m3)))
     (is (= 2 (mget m3 (mkey 1))))
     (is (= 3 (mget m3 (mkey 2))))))
+
+(deftest massoc-same-array-index
+  (let [m1 (new-map)
+        m2 (massoc m1 (mkey 1) 2)
+        m3 (massoc m2 (mkey 33) 3)]
+    (is (= 2 (mget m3 (mkey 1))))
+    (is (= 3 (mget m3 (mkey 33))))))

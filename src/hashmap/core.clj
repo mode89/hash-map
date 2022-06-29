@@ -43,12 +43,18 @@
 
 (defmethod node-assoc ArrayNode [node shift khash k v]
   (let [child-idx (array-index shift khash)
-        child (nth (:children node) child-idx)]
+        children (:children node)
+        child (nth children child-idx)]
     (if (nil? child)
-      (-> (:children node)
+      (-> children
           (assoc child-idx (MapEntry. k v))
           ArrayNode.)
-      (throw (Exception. "Not implemented")))))
+      (let [new-child (node-assoc child (+ shift 5) khash k v)]
+        (if (identical? child new-child)
+          node
+          (-> children
+              (assoc child-idx new-child)
+              ArrayNode.))))))
 
 (defn new-map []
   "Create a empty Map"
