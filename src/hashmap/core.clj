@@ -80,7 +80,9 @@
                             (assoc (:children node)
                                    child-idx
                                    (MapEntry. k v)))))
-        (throw (Exception. "Not implemented"))))
+        (CollisionNode. khash
+                        (conj (:children node)
+                              (MapEntry. k v)))))
     (throw (Exception. "Not implemented"))))
 
 (defn new-map []

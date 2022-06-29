@@ -71,3 +71,12 @@
                (massoc (Key. 3 42) 4))
         m2 (massoc m1 (Key. 1 42) 2)]
     (is (identical? m1 m2))))
+
+(deftest add-to-collision-node
+  (let [m (-> (new-map)
+              (massoc (Key. 1 42) 2)
+              (massoc (Key. 3 42) 4)
+              (massoc (Key. 5 42) 6))]
+    (is (= 2 (mget m (Key. 1 42))))
+    (is (= 4 (mget m (Key. 3 42))))
+    (is (= 6 (mget m (Key. 5 42))))))
