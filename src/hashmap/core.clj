@@ -26,92 +26,90 @@
       (assoc (array-index shift (:key-hash node)) node)
       ArrayNode.))
 
-(defmulti node-get-entry (fn [node shift khash k] (class node)))
+(defn node-get-entry [node shift khash k]
+  (cond
+    (instance? ArrayNode node)
+      (let [child-idx (array-index shift khash)
+            child (nth (:children node) child-idx)]
+        (if (nil? child)
+          nil
+          (node-get-entry child (+ shift 5) khash k)))
+    (instance? MapEntry node)
+      (if (= (:key node) k)
+        node
+        nil)
+    (instance? CollisionNode node)
+      (->> (:children node)
+           (filter #(= k (:key %)))
+           first)
+    :else (throw (RuntimeException. "Unexpected type of node"))))
 
-(defmethod node-get-entry MapEntry [node shift khash k]
-  (if (= (:key node) k)
-    node
-    nil))
-
-(defmethod node-get-entry ArrayNode [node shift khash k]
-  (let [child-idx (array-index shift khash)
-        child (nth (:children node) child-idx)]
-    (if (nil? child)
-      nil
-      (node-get-entry child (+ shift 5) khash k))))
-
-(defmethod node-get-entry CollisionNode [node shift khash k]
-  (->> (:children node)
-       (filter #(= k (:key %)))
-       first))
-
-(defmulti node-assoc (fn [node shift entry] (class node)))
-
-(defmethod node-assoc MapEntry [node shift entry]
-  (if (= (:key node) (:key entry))
-    (if (= (:value node) (:value entry))
-      node
-      entry)
-    (if (= (:key-hash node) (:key-hash entry))
-      (CollisionNode. (:key-hash entry) [node entry])
-      (-> (make-array-node shift node)
-          (node-assoc shift entry)))))
-
-(defmethod node-assoc ArrayNode [node shift entry]
-  (let [child-idx (array-index shift (:key-hash entry))
-        children (:children node)
-        child (nth children child-idx)]
-    (if (nil? child)
-      (-> children
-          (assoc child-idx entry)
-          ArrayNode.)
-      (let [new-child (node-assoc child (+ shift 5) entry)]
-        (if (identical? child new-child)
-          node
+(defn node-assoc [node shift entry]
+  (cond
+    (instance? ArrayNode node)
+      (let [child-idx (array-index shift (:key-hash entry))
+            children (:children node)
+            child (nth children child-idx)]
+        (if (nil? child)
           (-> children
-              (assoc child-idx new-child)
-              ArrayNode.))))))
-
-(defmethod node-assoc CollisionNode [node shift entry]
-  (if (= (:key-hash node) (:key-hash entry))
-    (let [child-idx (-> #(if (= (:key %2) (:key entry)) %1)
-                        (keep-indexed (:children node))
-                        first)]
-      (if (some? child-idx)
-        (let [child (nth (:children node) child-idx)]
-          (if (= (:value child) (:value entry))
-            node
+              (assoc child-idx entry)
+              ArrayNode.)
+          (let [new-child (node-assoc child (+ shift 5) entry)]
+            (if (identical? child new-child)
+              node
+              (-> children
+                  (assoc child-idx new-child)
+                  ArrayNode.)))))
+    (instance? MapEntry node)
+      (if (= (:key node) (:key entry))
+        (if (= (:value node) (:value entry))
+          node
+          entry)
+        (if (= (:key-hash node) (:key-hash entry))
+          (CollisionNode. (:key-hash entry) [node entry])
+          (-> (make-array-node shift node)
+              (node-assoc shift entry))))
+    (instance? CollisionNode node)
+      (if (= (:key-hash node) (:key-hash entry))
+        (let [child-idx (-> #(if (= (:key %2) (:key entry)) %1)
+                            (keep-indexed (:children node))
+                            first)]
+          (if (some? child-idx)
+            (let [child (nth (:children node) child-idx)]
+              (if (= (:value child) (:value entry))
+                node
+                (CollisionNode. (:key-hash node)
+                                (assoc (:children node) child-idx entry))))
             (CollisionNode. (:key-hash node)
-                            (assoc (:children node) child-idx entry))))
-        (CollisionNode. (:key-hash node)
-                        (conj (:children node) entry))))
-    (-> (make-array-node shift node)
-        (node-assoc shift entry))))
+                            (conj (:children node) entry))))
+        (-> (make-array-node shift node)
+            (node-assoc shift entry)))
+    :else (throw (RuntimeException. "Unexpected type of node"))))
 
-(defmulti node-dissoc (fn [node shift khash k] (class node)))
-
-(defmethod node-dissoc MapEntry [node shift khash k]
-  (if (= (:key node) k)
-    nil
-    node))
-
-(defmethod node-dissoc CollisionNode [node shift khash k]
-  (if (not= (:key-hash node) khash)
-    node
-    (let [child (->> (:children node)
-                     (filter #(= (:key %) k))
-                     first)]
-      (if (some? child)
-        (if (= 2 (count (:children node)))
-          ;; If only one child left, convert to MapEntry
-          (->> (:children node)
-               (filter #(not= (:key %) k))
-               first)
-          ;; Otherwise return new CollisionNode without removed child
-          (->> (:children node)
-               (filterv #(not= (:key %) k))
-               (CollisionNode. khash)))
-        node))))
+(defn node-dissoc [node shift khash k]
+  (cond
+    (instance? MapEntry node)
+      (if (= (:key node) k)
+        nil
+        node)
+    (instance? CollisionNode node)
+      (if (not= (:key-hash node) khash)
+        node
+        (let [child (->> (:children node)
+                         (filter #(= (:key %) k))
+                         first)]
+          (if (some? child)
+            (if (= 2 (count (:children node)))
+              ;; If only one child left, convert to MapEntry
+              (->> (:children node)
+                   (filter #(not= (:key %) k))
+                   first)
+              ;; Otherwise return new CollisionNode without removed child
+              (->> (:children node)
+                   (filterv #(not= (:key %) k))
+                   (CollisionNode. khash)))
+            node)))
+    :else (throw (RuntimeException. "Unexpected type of node"))))
 
 (defn new-map []
   "Create a empty Map"
