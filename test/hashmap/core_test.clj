@@ -138,3 +138,44 @@
     (is (= 2 (mget m2 (Key. 1 42))))
     (is (nil? (mget m2 (Key. 3 42))))
     (is (= 6 (mget m2 (Key. 5 42))))))
+
+(deftest dissoc-array-node-miss
+  (let [m1 (-> (new-map)
+               (massoc (mkey 1) 2)
+               (massoc (mkey 3) 4))
+        m2 (mdissoc m1 (mkey 2))]
+    (is (identical? m1 m2))))
+
+(deftest dissoc-array-node-child-miss
+  (let [m1 (-> (new-map)
+               (massoc (mkey 1) 2)
+               (massoc (mkey 3) 4))
+        m2 (mdissoc m1 (mkey 33))]
+    (is (identical? m1 m2))))
+
+(deftest dissoc-array-node-remove-child
+  (let [m1 (-> (new-map)
+               (massoc (mkey 1) 2)
+               (massoc (mkey 3) 4))
+        m2 (mdissoc m1 (mkey 1))]
+    (is (nil? (mget m2 (mkey 1))))
+    (is (= 4 (mget m2 (mkey 3))))))
+
+(deftest dissoc-array-node-replace-child
+  (let [m1 (-> (new-map)
+               (massoc (mkey 1) 11)
+               (massoc (mkey 2) 12)
+               (massoc (mkey 34) 134))
+        m2 (mdissoc m1 (mkey 2))]
+    (is (= 11 (mget m2 (mkey 1))))
+    (is (nil? (mget m2 (mkey 2))))
+    (is (= 134 (mget m2 (mkey 34))))))
+
+(deftest dissoc-array-node-shrink
+  (let [m1 (-> (new-map)
+               (massoc (mkey 1) 11)
+               (massoc (mkey 2) 12))
+        m2 (-> m1
+               (mdissoc (mkey 1))
+               (mdissoc (mkey 2)))]
+    (is (identical? m2 (new-map)))))

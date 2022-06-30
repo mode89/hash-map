@@ -2,7 +2,7 @@
 
 (defrecord Map [root])
 
-(defrecord ArrayNode [children])
+(defrecord ArrayNode [children children-count])
 
 (defrecord CollisionNode [key-hash children])
 
@@ -24,7 +24,7 @@
   (-> (repeat 32 nil)
       vec
       (assoc (array-index shift (:key-hash node)) node)
-      ArrayNode.))
+      (ArrayNode. 1)))
 
 (defn node-get-entry [node shift khash k]
   (cond
@@ -53,13 +53,13 @@
         (if (nil? child)
           (-> children
               (assoc child-idx entry)
-              ArrayNode.)
+              (ArrayNode. (inc (:children-count node))))
           (let [new-child (node-assoc child (+ shift 5) entry)]
             (if (identical? child new-child)
               node
               (-> children
                   (assoc child-idx new-child)
-                  ArrayNode.)))))
+                  (ArrayNode. (:children-count node)))))))
     (instance? MapEntry node)
       (if (= (:key node) (:key entry))
         (if (= (:value node) (:value entry))
@@ -88,6 +88,21 @@
 
 (defn node-dissoc [node shift khash k]
   (cond
+    (instance? ArrayNode node)
+      (let [child-idx (array-index shift khash)
+            child (nth (:children node) child-idx)]
+        (if (nil? child)
+          node
+          (let [new-child (node-dissoc child (+ shift 5) khash k)]
+            (if (identical? child new-child)
+              node
+              (if (nil? new-child)
+                (if (= 1 (:children-count node))
+                  nil
+                  (ArrayNode. (assoc (:children node) child-idx nil)
+                              (dec (:children-count node))))
+                (ArrayNode. (assoc (:children node) child-idx new-child)
+                            (:children-count node)))))))
     (instance? MapEntry node)
       (if (= (:key node) k)
         nil
