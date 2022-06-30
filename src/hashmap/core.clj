@@ -18,7 +18,7 @@
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
 
 (defn make-entry [k v]
-  (MapEntry. (.hashCode k) k v))
+  (MapEntry. (hash k) k v))
 
 (defn make-array-node [shift node]
   (-> (repeat 32 nil)
@@ -122,7 +122,7 @@
   (if (nil? (:root m))
     nil
     (-> (:root m)
-        (node-get-entry 0 (.hashCode k) k)
+        (node-get-entry 0 (hash k) k)
         :value)))
 
 (defn massoc [m k v]
@@ -138,7 +138,7 @@
 (defn mdissoc [m k]
   (if (nil? (:root m))
     m
-    (let [new-root (node-dissoc (:root m) 0 (.hashCode k) k)]
+    (let [new-root (node-dissoc (:root m) 0 (hash k) k)]
       (if (identical? new-root (:root m))
         m
         (if (nil? new-root)
