@@ -1,4 +1,4 @@
-(ns hashmap.core_test
+(ns hashmap.core-test
   (:require [clojure.test :refer :all]
             [hashmap.core :refer :all])
   (:import [hashmap.core Map]))
