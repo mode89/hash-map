@@ -106,3 +106,35 @@
         m2 (massoc m1 1 42)
         m3 (mdissoc m2 1)]
     (is (identical? m1 m3))))
+
+(deftest dissoc-collision-node-miss-hash
+  (let [m1 (-> (new-map)
+               (massoc (Key. 1 42) 2)
+               (massoc (Key. 3 42) 4))
+        m2 (mdissoc m1 (Key. 2 43))]
+    (is (identical? m1 m2))))
+
+(deftest dissoc-collision-node-miss-key
+  (let [m1 (-> (new-map)
+               (massoc (Key. 1 42) 2)
+               (massoc (Key. 3 42) 4))
+        m2 (mdissoc m1 (Key. 2 42))]
+    (is (identical? m1 m2))))
+
+(deftest dissoc-collision-node-hit
+  (let [m1 (-> (new-map)
+               (massoc (Key. 1 42) 2)
+               (massoc (Key. 3 42) 4))
+        m2 (mdissoc m1 (Key. 3 42))]
+    (is (= 2 (mget m2 (Key. 1 42))))
+    (is (nil? (mget m2 (Key. 3 42))))))
+
+(deftest dissoc-collision-node-hit-3
+  (let [m1 (-> (new-map)
+               (massoc (Key. 1 42) 2)
+               (massoc (Key. 3 42) 4)
+               (massoc (Key. 5 42) 6))
+        m2 (mdissoc m1 (Key. 3 42))]
+    (is (= 2 (mget m2 (Key. 1 42))))
+    (is (nil? (mget m2 (Key. 3 42))))
+    (is (= 6 (mget m2 (Key. 5 42))))))

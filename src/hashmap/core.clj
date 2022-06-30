@@ -95,6 +95,24 @@
     nil
     node))
 
+(defmethod node-dissoc CollisionNode [node shift khash k]
+  (if (not= (:key-hash node) khash)
+    node
+    (let [child (->> (:children node)
+                     (filter #(= (:key %) k))
+                     first)]
+      (if (some? child)
+        (if (= 2 (count (:children node)))
+          ;; If only one child left, convert to MapEntry
+          (->> (:children node)
+               (filter #(not= (:key %) k))
+               first)
+          ;; Otherwise return new CollisionNode without removed child
+          (->> (:children node)
+               (filterv #(not= (:key %) k))
+               (CollisionNode. khash)))
+        node))))
+
 (defn new-map []
   "Create a empty Map"
   EMPTY-MAP)
@@ -125,4 +143,4 @@
         m
         (if (nil? new-root)
           EMPTY-MAP
-          (not-implemented))))))
+          (Map. new-root))))))
