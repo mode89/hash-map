@@ -1,5 +1,10 @@
 (ns hashmap.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.set :refer (difference)]
+            [clojure.test :refer :all]
+            [clojure.test.check :as tc]
+            [clojure.test.check.clojure-test :refer (defspec)]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
             [hashmap.core :refer :all])
   (:import [hashmap.core Map]))
 
@@ -179,3 +184,42 @@
                (mdissoc (mkey 1))
                (mdissoc (mkey 2)))]
     (is (identical? m2 (new-map)))))
+
+(def gen-key gen/any-printable-equatable)
+(def gen-value gen/string-alpha-numeric)
+(defn gen-assoc [ks]
+  (gen/tuple (gen/return :assoc) (gen/elements ks) gen-value))
+(defn gen-dissoc [ks]
+  (gen/tuple (gen/return :dissoc) (gen/elements ks)))
+(defn gen-op [ks]
+  (gen/one-of [(gen-assoc ks) (gen-dissoc ks)]))
+(defn gen-ops [ks]
+  (gen/vector (gen-op ks)))
+(def gen-keys (gen/not-empty (gen/set gen-key)))
+(def gen-ops*
+  (gen/let [ks gen-keys]
+    (gen/tuple (gen-ops ks) (gen/return ks))))
+(defn m-run [ops]
+  (reduce (fn [m [op k v]]
+            (case op
+              :assoc (assoc m k v)
+              :dissoc (dissoc m k)
+              :else (throw (Exception. "Unknown op"))))
+          {} ops))
+(defn hm-run [ops]
+  (reduce (fn [m [op k v]]
+            (case op
+              :assoc (massoc m k v)
+              :dissoc (mdissoc m k)
+              :else (throw (Exception. "Unknown op"))))
+          (new-map) ops))
+
+(defspec property-same-values
+  (prop/for-all [[ops ks] gen-ops*]
+    (let [m (m-run ops)
+          hm (hm-run ops)
+          used-ks (set (keys m))
+          unused-ks (difference ks used-ks)]
+      (and (= (map #(get m %) used-ks)
+              (map #(mget hm %) used-ks))
+           (every? nil? (map #(mget hm %) unused-ks))))))
