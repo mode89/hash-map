@@ -157,3 +157,22 @@
         (if (nil? new-root)
           EMPTY-MAP
           (Map. new-root))))))
+
+(defn mseq [m]
+  (if (nil? (:root m))
+    nil
+    (filter #(instance? MapEntry %)
+            (tree-seq
+              #(not (instance? MapEntry %))
+              #(cond
+                (instance? ArrayNode %)
+                  (filter some? (:children %))
+                (instance? CollisionNode %)
+                  (seq (:children %))
+                :else (not-implemented))
+              (:root m)))))
+
+(defn mkeys [m]
+  (if (nil? (:root m))
+    nil
+    (map #(:key %) (mseq m))))

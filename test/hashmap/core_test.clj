@@ -223,3 +223,10 @@
       (and (= (map #(get m %) used-ks)
               (map #(mget hm %) used-ks))
            (every? nil? (map #(mget hm %) unused-ks))))))
+
+(defspec property-same-keys
+  (prop/for-all [[ops] gen-ops*]
+    (let [m (m-run ops)
+          hm (hm-run ops)]
+      (= (set (keys m))
+         (set (mkeys hm))))))
