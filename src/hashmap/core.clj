@@ -126,6 +126,41 @@
             node)))
     :else (throw (RuntimeException. "Unexpected type of node"))))
 
+(defn node-diff [shift na nb]
+  (if (identical? na nb)
+    [nil nil na]
+    (cond
+      (instance? ArrayNode na)
+        (cond
+          (instance? MapEntry nb)
+            (let [[ob oa ab] (node-diff shift nb na)]
+              [oa ob ab])
+          :else (not-implemented))
+      (instance? MapEntry na)
+        (cond
+          (instance? MapEntry nb)
+            (if (= (:key na) (:key nb))
+              (if (= (:value na) (:value nb))
+                [nil nil na]
+                [na nb nil])
+              [na nb nil])
+          (or (instance? ArrayNode nb)
+              (instance? CollisionNode nb))
+            (let [eb (node-get-entry nb shift (:key-hash na) (:key na))]
+              (if (some? eb)
+                (if (= (:value na) (:value eb))
+                  [nil (node-dissoc nb shift (:key-hash na) (:key na)) na]
+                  [na nb nil])
+                [na nb nil]))
+          :else (not-implemented))
+      (instance? CollisionNode na)
+        (cond
+          (instance? MapEntry nb)
+            (let [[ob oa ab] (node-diff shift nb na)]
+              [oa ob ab])
+          :else (not-implemented))
+      :else (not-implemented))))
+
 (defn new-map []
   "Create a empty Map"
   EMPTY-MAP)
@@ -176,3 +211,8 @@
   (if (nil? (:root m))
     nil
     (map #(:key %) (mseq m))))
+
+(defn mdiff [a b]
+  (if (identical? (:root a) (:root b))
+    [nil nil a]
+    (Map. (node-diff (:root a) (:root b)))))

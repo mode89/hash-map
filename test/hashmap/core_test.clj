@@ -6,7 +6,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [hashmap.core :refer :all])
-  (:import [hashmap.core Map]))
+  (:import [hashmap.core CollisionNode Map]))
 
 (deftype Key [value hash-code]
   Object
@@ -17,6 +17,10 @@
 
 (defn mkey [x]
   (Key. x x))
+
+(defn make-collision-node [n1 n2]
+  (assert (= (:key-hash n1) (:key-hash n2)))
+  (CollisionNode. (:key-hash n1) [n1 n2]))
 
 (deftest make-new-map
   (let [m (new-map)]
@@ -184,6 +188,94 @@
                (mdissoc (mkey 1))
                (mdissoc (mkey 2)))]
     (is (identical? m2 (new-map)))))
+
+(deftest diff-identical
+  (let [m1 (-> (new-map)
+               (massoc 42 43))
+        m2 m1]
+    (is (= (mdiff m1 m2) [nil nil m1]))))
+
+(deftest diff-identical-node
+  (let [e1 (make-entry 1 2)
+        e2 e1]
+    (is (= (node-diff 0 e1 e2) [nil nil e1]))))
+
+(deftest diff-map-entry
+  (let [e1 (make-entry 1 2)
+        e2 (make-entry 1 2)
+        e3 (make-entry 1 3)
+        e4 (make-entry 2 2)]
+    (is (= (node-diff 0 e1 e2) [nil nil e1]))
+    (is (= (node-diff 0 e1 e3) [e1 e3 nil]))
+    (is (= (node-diff 0 e1 e4) [e1 e4 nil]))))
+
+(deftest diff-map-entry-and-collision-node-hit
+  (let [e1 (make-entry (Key. 1 42) 1)
+        e2 (make-entry (Key. 2 42) 2)
+        cn (make-collision-node e2 (make-entry (Key. 1 42) 1))
+        [oa ob ab] (node-diff 0 e1 cn)]
+    (is (nil? oa))
+    (is (identical? ob e2))
+    (is (identical? ab e1))))
+
+(deftest diff-map-entry-and-collision-node-same-key
+  (let [en (make-entry (Key. 1 42) 1)
+        cn (make-collision-node (make-entry (Key. 2 42) 2)
+                                (make-entry (Key. 1 42) 3))
+        [oa ob ab] (node-diff 0 en cn)]
+    (is (identical? oa en))
+    (is (identical? ob cn))
+    (is (nil? ab))))
+
+(deftest diff-map-entry-and-collision-node-miss
+  (let [en (make-entry (Key. 3 42) 1)
+        cn (make-collision-node (make-entry (Key. 2 42) 2)
+                                (make-entry (Key. 1 42) 3))
+        [oa ob ab] (node-diff 0 en cn)]
+    (is (identical? oa en))
+    (is (identical? ob cn))
+    (is (nil? ab))))
+
+(deftest diff-map-entry-and-array-node-hit
+  (let [en (make-entry 1 1)
+        an (make-array-node 0 (make-entry 1 1))
+        [oa ob ab] (node-diff 0 en an)]
+    (is (nil? oa))
+    (is (nil? ob))
+    (is (identical? ab en))))
+
+(deftest diff-map-entry-and-array-node-same-key
+  (let [en (make-entry 1 1)
+        an (make-array-node 0 (make-entry 1 2))
+        [oa ob ab] (node-diff 0 en an)]
+    (is (identical? oa en))
+    (is (identical? ob an))
+    (is (nil? ab))))
+
+(deftest diff-map-entry-and-array-node-miss
+  (let [en (make-entry 1 1)
+        an (make-array-node 0 (make-entry 2 1))
+        [oa ob ab] (node-diff 0 en an)]
+    (is (identical? oa en))
+    (is (identical? ob an))
+    (is (nil? ab))))
+
+(deftest diff-array-node-and-map-entry
+  (let [en (make-entry 1 1)
+        an (make-array-node 0 (make-entry 2 1))
+        [oa ob ab] (node-diff 0 an en)]
+    (is (identical? oa an))
+    (is (identical? ob en))
+    (is (nil? ab))))
+
+(deftest diff-collision-node-and-map-entry
+  (let [en (make-entry (Key. 3 42) 1)
+        cn (make-collision-node (make-entry (Key. 2 42) 2)
+                                (make-entry (Key. 1 42) 3))
+        [oa ob ab] (node-diff 0 cn en)]
+    (is (identical? oa cn))
+    (is (identical? ob en))
+    (is (nil? ab))))
 
 (def gen-key gen/any-printable-equatable)
 (def gen-value gen/string-alpha-numeric)
