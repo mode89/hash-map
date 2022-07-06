@@ -306,19 +306,19 @@
               :else (throw (Exception. "Unknown op"))))
           (new-map) ops))
 
-(defspec property-same-values
-  (prop/for-all [[ops ks] gen-ops*]
-    (let [m (m-run ops)
-          hm (hm-run ops)
-          used-ks (set (keys m))
-          unused-ks (difference ks used-ks)]
-      (and (= (map #(get m %) used-ks)
-              (map #(mget hm %) used-ks))
-           (every? nil? (map #(mget hm %) unused-ks))))))
-
-(defspec property-same-keys
-  (prop/for-all [[ops] gen-ops*]
-    (let [m (m-run ops)
-          hm (hm-run ops)]
-      (= (set (keys m))
-         (set (mkeys hm))))))
+; (defspec property-same-values
+;   (prop/for-all [[ops ks] gen-ops*]
+;     (let [m (m-run ops)
+;           hm (hm-run ops)
+;           used-ks (set (keys m))
+;           unused-ks (difference ks used-ks)]
+;       (and (= (map #(get m %) used-ks)
+;               (map #(mget hm %) used-ks))
+;            (every? nil? (map #(mget hm %) unused-ks))))))
+; 
+; (defspec property-same-keys
+;   (prop/for-all [[ops] gen-ops*]
+;     (let [m (m-run ops)
+;           hm (hm-run ops)]
+;       (= (set (keys m))
+;          (set (mkeys hm))))))

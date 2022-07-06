@@ -132,9 +132,13 @@
     (cond
       (instance? ArrayNode na)
         (cond
+          (instance? ArrayNode nb)
+            (not-implemented)
           (instance? MapEntry nb)
             (let [[ob oa ab] (node-diff shift nb na)]
               [oa ob ab])
+          (instance? CollisionNode nb)
+            (not-implemented)
           :else (not-implemented))
       (instance? MapEntry na)
         (cond
@@ -155,9 +159,13 @@
           :else (not-implemented))
       (instance? CollisionNode na)
         (cond
+          (instance? ArrayNode nb)
+            (not-implemented)
           (instance? MapEntry nb)
             (let [[ob oa ab] (node-diff shift nb na)]
               [oa ob ab])
+          (instance? CollisionNode nb)
+            (not-implemented)
           :else (not-implemented))
       :else (not-implemented))))
 
