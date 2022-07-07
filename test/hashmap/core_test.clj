@@ -207,6 +207,11 @@
   (let [e1 (make-entry 1 1)]
     (is (nil? (node-difference 0 e1 e1)))))
 
+(deftest node-difference-nil
+  (let [e1 (make-entry 1 1)]
+    (is (identical? e1 (node-difference 0 e1 nil)))
+    (is (nil? (node-difference 0 nil e1)))))
+
 (deftest node-difference-entry
   (let [k1 (Key. 1 42)
         e1 (make-entry k1 1)
