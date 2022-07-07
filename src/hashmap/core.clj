@@ -126,6 +126,32 @@
             node)))
     :else (throw (RuntimeException. "Unexpected type of node"))))
 
+(defn entry-difference [ea eb]
+  (if (or (identical? ea eb)
+          (and (some? ea)
+               (some? eb)
+               (= (:key ea) (:key eb))
+               (= (:value ea) (:value eb))))
+    nil
+    ea))
+
+(defn node-difference [shift na nb]
+  (cond
+    (identical? na nb) nil
+    (and (some? na) (some? nb))
+      (condp instance? na
+        MapEntry
+          (condp instance? nb
+            ArrayNode
+              (entry-difference
+                na (node-get-entry nb shift (:key-hash na) (:key na)))
+            MapEntry
+              (entry-difference na nb)
+            CollisionNode
+              (entry-difference
+                na (node-get-entry nb shift (:key-hash na) (:key na)))))
+    :else na))
+
 (defn new-map []
   "Create a empty Map"
   EMPTY-MAP)

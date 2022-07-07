@@ -6,7 +6,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [hashmap.core :refer :all])
-  (:import [hashmap.core Map]))
+  (:import [hashmap.core CollisionNode Map]))
 
 (deftype Key [value hash-code]
   Object
@@ -17,6 +17,10 @@
 
 (defn mkey [x]
   (Key. x x))
+
+(defn make-collision-node [n1 n2]
+  (assert (= (:key-hash n1) (:key-hash n2)))
+  (CollisionNode. (:key-hash n1) [n1 n2]))
 
 (deftest make-new-map
   (let [m (new-map)]
@@ -184,6 +188,36 @@
                (mdissoc (mkey 1))
                (mdissoc (mkey 2)))]
     (is (identical? m2 (new-map)))))
+
+(deftest entry-difference-test
+  (let [e1 (make-entry 1 1)
+        e2 (make-entry 2 1)
+        e3 (make-entry 1 3)
+        e4 (make-entry 1 1)
+        e5 (make-entry (Key. 1 42) 1)
+        e6 (make-entry (Key. 2 42) 1)]
+    (is (nil? (entry-difference e1 e1)))
+    (is (nil? (entry-difference nil e1)))
+    (is (identical? e1 (entry-difference e1 nil)))
+    (is (identical? e1 (entry-difference e1 e2)))
+    (is (nil? (entry-difference e1 e4)))
+    (is (identical? e5 (entry-difference e5 e6)))))
+
+(deftest node-difference-identical
+  (let [e1 (make-entry 1 1)]
+    (is (nil? (node-difference 0 e1 e1)))))
+
+(deftest node-difference-entry
+  (let [k1 (Key. 1 42)
+        e1 (make-entry k1 1)
+        e2 (make-entry k1 2)
+        an (make-array-node 0 e2)
+        cn (make-collision-node (make-entry (Key. 3 42) 3)
+                                (make-entry (Key. 4 42) 4))]
+    (is (identical? e1 (node-difference 0 e1 e2)))
+    (is (identical? e1 (node-difference 0 e1 an)))
+    (is (identical? e1 (node-difference 0 e1 cn)))
+    (is (thrown? Exception (node-difference 0 e1 42)))))
 
 (def gen-key gen/any-printable-equatable)
 (def gen-value gen/string-alpha-numeric)
