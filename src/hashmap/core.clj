@@ -13,6 +13,9 @@
 (defn not-implemented []
   (throw (Exception. "Not implemented")))
 
+(defn count-if [f x]
+  (reduce #(if (f %2) (inc %1) %1) 0 x))
+
 (defn array-index [s h]
   "Index of a key inside an ArrayNode"
   (bit-and (unsigned-bit-shift-right h s) 0x1F))
@@ -140,6 +143,20 @@
     (identical? na nb) nil
     (and (some? na) (some? nb))
       (condp instance? na
+        ArrayNode
+          (condp instance? nb
+            ArrayNode
+              (let [children (mapv #(node-difference (+ shift 5) %1 %2)
+                                   (:children na)
+                                   (:children nb))
+                    children-count (count-if some? children)]
+                (if (> children-count 0)
+                  (ArrayNode. children children-count)
+                  nil))
+            MapEntry
+              (node-dissoc na shift (:key-hash nb) (:key nb))
+            CollisionNode
+              (not-implemented))
         MapEntry
           (condp instance? nb
             ArrayNode
@@ -149,7 +166,15 @@
               (entry-difference na nb)
             CollisionNode
               (entry-difference
-                na (node-get-entry nb shift (:key-hash na) (:key na)))))
+                na (node-get-entry nb shift (:key-hash na) (:key na))))
+        CollisionNode
+          (condp instance? nb
+            ArrayNode
+              (not-implemented)
+            MapEntry
+              (not-implemented)
+            CollisionNode
+              (not-implemented)))
     :else na))
 
 (defn new-map []
@@ -202,3 +227,6 @@
   (if (nil? (:root m))
     nil
     (map #(:key %) (mseq m))))
+
+(defn mdifference [ma mb]
+  (Map. (node-difference 0 (:root ma) (:root mb))))

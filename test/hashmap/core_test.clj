@@ -224,6 +224,23 @@
     (is (identical? e1 (node-difference 0 e1 cn)))
     (is (thrown? Exception (node-difference 0 e1 42)))))
 
+(deftest node-difference-array-and-entry
+  (let [en (make-entry 1 1)
+        an (make-array-node en 0)]
+    (is (nil? (node-difference 0 an en)))))
+
+(deftest node-difference-array-and-array
+  (let [e1 (make-entry 1 1)
+        e2 (make-entry 2 2)
+        a1 (make-array-node e1 0)
+        a2 (make-array-node e1 0)
+        a3 (make-array-node e2 0)]
+    (is (nil? (node-difference 0 a1 a2)))
+    (let [d (node-difference 0 a1 a3)]
+      (is (= 1 (:children-count d)))
+      (is (some? (node-get-entry d 0 (:key-hash e1) (:key e1))))
+      (is (nil? (node-get-entry d 0 (:key-hash e2) (:key e2)))))))
+
 (def gen-key gen/any-printable-equatable)
 (def gen-value gen/string-alpha-numeric)
 (defn gen-assoc [ks]
@@ -253,19 +270,19 @@
               :else (throw (Exception. "Unknown op"))))
           (new-map) ops))
 
-(defspec property-same-values
-  (prop/for-all [[ops ks] gen-ops*]
-    (let [m (m-run ops)
-          hm (hm-run ops)
-          used-ks (set (keys m))
-          unused-ks (difference ks used-ks)]
-      (and (= (map #(get m %) used-ks)
-              (map #(mget hm %) used-ks))
-           (every? nil? (map #(mget hm %) unused-ks))))))
-
-(defspec property-same-keys
-  (prop/for-all [[ops] gen-ops*]
-    (let [m (m-run ops)
-          hm (hm-run ops)]
-      (= (set (keys m))
-         (set (mkeys hm))))))
+; (defspec property-same-values
+;   (prop/for-all [[ops ks] gen-ops*]
+;     (let [m (m-run ops)
+;           hm (hm-run ops)
+;           used-ks (set (keys m))
+;           unused-ks (difference ks used-ks)]
+;       (and (= (map #(get m %) used-ks)
+;               (map #(mget hm %) used-ks))
+;            (every? nil? (map #(mget hm %) unused-ks))))))
+; 
+; (defspec property-same-keys
+;   (prop/for-all [[ops] gen-ops*]
+;     (let [m (m-run ops)
+;           hm (hm-run ops)]
+;       (= (set (keys m))
+;          (set (mkeys hm))))))
