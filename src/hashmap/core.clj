@@ -20,7 +20,7 @@
 (defn make-entry [k v]
   (MapEntry. (hash k) k v))
 
-(defn make-array-node [shift node]
+(defn make-array-node [node shift]
   (-> (repeat 32 nil)
       vec
       (assoc (array-index shift (:key-hash node)) node)
@@ -67,7 +67,7 @@
           entry)
         (if (= (:key-hash node) (:key-hash entry))
           (CollisionNode. (:key-hash entry) [node entry])
-          (-> (make-array-node shift node)
+          (-> (make-array-node node shift)
               (node-assoc shift entry))))
     (instance? CollisionNode node)
       (if (= (:key-hash node) (:key-hash entry))
@@ -82,7 +82,7 @@
                                 (assoc (:children node) child-idx entry))))
             (CollisionNode. (:key-hash node)
                             (conj (:children node) entry))))
-        (-> (make-array-node shift node)
+        (-> (make-array-node node shift)
             (node-assoc shift entry)))
     :else (throw (RuntimeException. "Unexpected type of node"))))
 

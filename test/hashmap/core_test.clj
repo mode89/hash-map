@@ -216,7 +216,7 @@
   (let [k1 (Key. 1 42)
         e1 (make-entry k1 1)
         e2 (make-entry k1 2)
-        an (make-array-node 0 e2)
+        an (make-array-node e2 0)
         cn (make-collision-node (make-entry (Key. 3 42) 3)
                                 (make-entry (Key. 4 42) 4))]
     (is (identical? e1 (node-difference 0 e1 e2)))
